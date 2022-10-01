@@ -27,35 +27,50 @@ set -eu
 
 export DEBIAN_FRONTEND="noninteractive"
 
-show-exec apt-get update
+install-packages() {
+    show-exec apt-get update
 
-# デバッグ用途
-#show-exec apt-get install -y neovim
-#show-exec apt-get install -y iputils-ping
+    # デバッグ用途
+    show-exec apt-get install -y neovim
+    show-exec apt-get install -y iputils-ping
 
-# 必要パッケージのインストール
-show-exec apt-get install -y git
-show-exec apt-get install -y apache2
-show-exec apt-get install -y libapache2-mod-php
-show-exec apt-get install -y php-intl php-mbstring php-xml
-show-exec apt-get install -y php-mysql
-show-exec apt-get install -y php-apcu php-imagick php-gd 
-show-exec apt-get install -y mariadb-server
-show-exec apt-get install -y wget
+    # 必要パッケージのインストール
+    show-exec apt-get install -y git
+    show-exec apt-get install -y apache2
+    show-exec apt-get install -y libapache2-mod-php
+    show-exec apt-get install -y php-intl php-mbstring php-xml
+    show-exec apt-get install -y php-mysql
+    show-exec apt-get install -y php-apcu php-imagick php-gd
+    show-exec apt-get install -y mariadb-server
+    show-exec apt-get install -y wget
+}
+
+if [ ! -f /var/www/html/w/LocalSettings.php ]; then
+    install-packages
+fi
+
+# データベースの起動
+if service mysql status > /dev/null; then
+    :
+    #show-exec service mysql restart
+else
+    show-exec service mysql start
+fi
 
 # MediaWikiの利用準備
-show-exec cd /var/www/html
-show-exec wget -c ${MEDIAWIKI_ARCHIVE_URL}
-show-exec tar zxvf ${MEDIAWIKI_ARCHIVE}
-if [ -d w ]; then
-    show-exec unlink w
+if [ ! -f /var/www/html/w/LocalSettings.php ]; then
+    show-exec cd /var/www/html
+    show-exec wget -c ${MEDIAWIKI_ARCHIVE_URL}
+    show-exec tar zxvf ${MEDIAWIKI_ARCHIVE}
+    if [ -d w ]; then
+        show-exec unlink w
+    fi
+    show-exec ln -s ${MEDIAWIKI_BASENAME} w
 fi
-show-exec ln -s ${MEDIAWIKI_BASENAME} w
 
 # MediaWikiの初期設定
-show-exec service mysql restart
-show-exec cd /var/www/html
-if [ -f index.html ]; then
+if [ -f /var/www/html/index.html ]; then
+    show-exec cd /var/www/html
     show-exec rm index.html
 fi
 show-exec cd /var/www/html/w
